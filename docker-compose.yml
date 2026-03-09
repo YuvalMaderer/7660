@@ -1,0 +1,29 @@
+# Production: רשימת עוגן - Anchor List
+# הרצה: docker compose up -d
+# דרוש: קובץ .env עם GOOGLE_SHEETS_WEB_APP_URL
+
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-3001}:3001"
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    restart: unless-stopped
+
+  # Ollama – חילוץ AI (אופציונלי). ללא זה – חילוץ יורד ל-fallback ידני
+  # הפעל רק אם יש משאבים: ollama pull qwen2.5:1.5b
+  # ollama:
+  #   image: ollama/ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+  #   profiles:
+  #     - ai
+
+# volumes:
+#   ollama_data:
