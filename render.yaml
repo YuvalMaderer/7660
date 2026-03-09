@@ -1,0 +1,12 @@
+# Render Blueprint - פריסה אוטומטית
+# https://dashboard.render.com/blueprint/new
+services:
+  - type: web
+    name: 7660-anchor-list
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GOOGLE_SHEETS_WEB_APP_URL
+        sync: false  # תגדיר ידנית ב-Render Dashboard
