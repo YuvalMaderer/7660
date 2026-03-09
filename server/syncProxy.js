@@ -41,11 +41,11 @@ async function handleExtractStream(req, res) {
   const send = (obj) => res.write(JSON.stringify(obj) + '\n');
 
   try {
-    const { extractWithOllamaStream } = await import('./ollamaExtract.js');
-    const data = await extractWithOllamaStream(text, (chars) => send({ type: 'progress', chars }));
+    const { extractFreeTextStream } = await import('./ollamaExtract.js');
+    const data = await extractFreeTextStream(text, (chars) => send({ type: 'progress', chars }));
     send({ type: 'done', data });
   } catch (err) {
-    console.warn('[extract] Ollama:', err.message);
+    console.warn('[extract] AI:', err.message);
     send({ type: 'done', data: getStubResult(text) });
   } finally {
     res.end();
@@ -66,13 +66,13 @@ async function handleExtractPlain(req, res) {
   if (!text) return res.json({ אנשים: [] });
 
   try {
-    const { extractWithOllama } = await import('./ollamaExtract.js');
-    const data = await extractWithOllama(text);
+    const { extractFreeText } = await import('./ollamaExtract.js');
+    const data = await extractFreeText(text);
     if (data.אנשים && data.אנשים.length > 0) {
       return res.json(data);
     }
   } catch (err) {
-    console.warn('[extract] Ollama:', err.message);
+    console.warn('[extract] AI:', err.message);
   }
   res.json(getStubResult(text));
 }

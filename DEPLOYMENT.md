@@ -3,7 +3,9 @@
 ## דרישות
 
 - **חובה:** `GOOGLE_SHEETS_WEB_APP_URL` – כתובת Web App של Google Apps Script (נבחרת: "כל משתמש")
-- **אופציונלי:** Ollama לסגנון AI – אם לא מותקן, חילוץ עובר ל-fallback ידני
+- **אופציונלי – חילוץ AI:**
+  - **Ollama** (מקומי/Docker) – בחינם
+  - **Groq** (ענן) – fallback ב-production. מפתח חינם: [console.groq.com](https://console.groq.com)
 
 ---
 
@@ -73,6 +75,7 @@ $env:NODE_ENV="production"; $env:PORT="3001"; node server/syncProxy.js
 2. Build Command: `npm run build`
 3. Start Command: `node server/syncProxy.js`
 4. הגדר משתנים: `GOOGLE_SHEETS_WEB_APP_URL`, `NODE_ENV=production`
+5. **חילוץ טקסט חופשי ב-production:** הוסף `GROQ_API_KEY` (מפתח חינם מ-console.groq.com)
 5. Port: 3001 (או לפי מה שהפלטפורמה דורשת)
 
 ### AWS / GCP / Azure

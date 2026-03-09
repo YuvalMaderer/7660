@@ -249,6 +249,92 @@ export async function extractWithOllama(text, options = {}) {
   throw lastErr || new Error('No Ollama model available');
 }
 
+/**
+ * Cloud extraction via Groq (fallback when Ollama unavailable, e.g. production).
+ * Requires: GROQ_API_KEY. Free tier: console.groq.com
+ */
+export async function extractWithGroq(text) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error('GROQ_API_KEY not set');
+
+  const tableResult = parseTableInPlace(text);
+  if (tableResult && Array.isArray(tableResult.אנשים)) {
+    const people = tableResult.אנשים.filter((p) => p && typeof p === 'object').map(normalizePerson);
+    return { אנשים: people };
+  }
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildUserPrompt(text) },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0,
+      max_tokens: 1024,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Groq API ${res.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const json = await res.json();
+  const content = json?.choices?.[0]?.message?.content || '';
+  const data = parseJsonFromContent(content);
+  if (!data || !Array.isArray(data.אנשים)) return { אנשים: [] };
+
+  const people = data.אנשים
+    .filter((p) => p && typeof p === 'object')
+    .map(normalizePerson);
+  return { אנשים: people };
+}
+
+/** Try extraction: Ollama first, then Groq (cloud) if Ollama unavailable */
+export async function extractFreeText(text, options = {}) {
+  try {
+    return await extractWithOllama(text, options);
+  } catch (ollamaErr) {
+    if (process.env.GROQ_API_KEY) {
+      try {
+        return await extractWithGroq(text);
+      } catch (groqErr) {
+        console.warn('[extract] Groq:', groqErr.message);
+        throw ollamaErr;
+      }
+    }
+    throw ollamaErr;
+  }
+}
+
+/** Stream: Ollama first, fallback to Groq (non-stream) */
+export async function extractFreeTextStream(text, onChunk) {
+  try {
+    return await extractWithOllamaStream(text, onChunk);
+  } catch (ollamaErr) {
+    if (process.env.GROQ_API_KEY) {
+      try {
+        const data = await extractWithGroq(text);
+        if (onChunk && data?.אנשים?.length) {
+          onChunk(JSON.stringify(data).length, JSON.stringify(data));
+        }
+        return data;
+      } catch (groqErr) {
+        console.warn('[extract] Groq:', groqErr.message);
+        throw ollamaErr;
+      }
+    }
+    throw ollamaErr;
+  }
+}
+
 /** Stream extraction - calls onChunk(charsReceived, contentSoFar) for progress, returns final result */
 export async function extractWithOllamaStream(text, onChunk, options = {}) {
   const host = options.host || process.env.OLLAMA_HOST;
