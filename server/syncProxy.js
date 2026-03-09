@@ -20,6 +20,12 @@ const SHEETS_URL = process.env.GOOGLE_SHEETS_WEB_APP_URL;
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
+// Allow microphone for speech recognition on mobile (fixes service-not-allowed)
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'microphone=(self)');
+  next();
+});
+
 // AI extraction (streaming) – real progress | fallback to non-stream
 app.post('/api/extract', async (req, res) => {
   const stream = req.query?.stream === '1' || req.headers?.accept?.includes('text/event-stream');

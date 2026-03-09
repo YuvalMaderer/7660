@@ -41,7 +41,12 @@ export function RawInputSection({ value, onChange, onExtract, isLoading, error, 
       if (full) transcriptRef.current = full;
     };
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-      if (e.error !== 'aborted') setRecordingError(`שגיאה: ${e.error}`);
+      if (e.error !== 'aborted') {
+        const msg = e.error === 'service-not-allowed'
+          ? 'הקלטת קול חסומה. באייפון: השתמש ב-Safari (לא Chrome). באנדרואיד: אשר הרשאת מיקרופון בהגדרות.'
+          : `שגיאה: ${e.error}`;
+        setRecordingError(msg);
+      }
       setIsRecording(false);
     };
     recognition.onend = () => {
@@ -123,7 +128,7 @@ export function RawInputSection({ value, onChange, onExtract, isLoading, error, 
             {isRecording ? 'מקליט... לחץ לעצירה' : 'הקלט הודעה'}
           </button>
         ) : (
-          <span className="text-sm text-slate-400">(הקלטת קול: Chrome בלבד)</span>
+          <span className="text-sm text-slate-400">(הקלטת קול: Chrome דסקטופ / Safari באייפון)</span>
         )}
       </div>
     </div>
