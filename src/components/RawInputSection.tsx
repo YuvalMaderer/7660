@@ -14,6 +14,8 @@ const SpeechReco = typeof window !== 'undefined'
   ? (typeof SpeechRecognition !== 'undefined' ? SpeechRecognition : typeof webkitSpeechRecognition !== 'undefined' ? webkitSpeechRecognition : null)
   : null;
 
+const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
 export function RawInputSection({ value, onChange, onExtract, isLoading, error, progressMessage, progressPercent }: RawInputSectionProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingError, setRecordingError] = useState<string | null>(null);
@@ -22,16 +24,28 @@ export function RawInputSection({ value, onChange, onExtract, isLoading, error, 
   const valueRef = useRef(value);
   useEffect(() => { valueRef.current = value; }, [value]);
 
-  const startRecording = () => {
+  const startRecording = async () => {
     if (!SpeechReco) {
-      setRecordingError('הדפדפן שלך לא תומך בהקלטת קול. נסה Chrome.');
+      setRecordingError('הדפדפן שלך לא תומך בהקלטת קול. נסה Chrome דסקטופ.');
       return;
     }
     setRecordingError(null);
     transcriptRef.current = '';
+
+    // iOS: request microphone permission first (helps with Safari)
+    if (navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (permErr) {
+        setRecordingError('נדרשת הרשאת מיקרופון. אשר בדפדפן ונסה שוב.');
+        return;
+      }
+    }
+
     const recognition = new SpeechReco();
     recognition.lang = 'he-IL';
-    recognition.continuous = true;
+    recognition.continuous = !isIOS; // Safari iOS works better with continuous=false
     recognition.interimResults = true;
     recognition.onresult = (e: SpeechRecognitionEvent) => {
       const full = Array.from(e.results)
@@ -43,7 +57,9 @@ export function RawInputSection({ value, onChange, onExtract, isLoading, error, 
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
       if (e.error !== 'aborted') {
         const msg = e.error === 'service-not-allowed'
-          ? 'הקלטת קול חסומה. באייפון: השתמש ב-Safari (לא Chrome). באנדרואיד: אשר הרשאת מיקרופון בהגדרות.'
+          ? isIOS
+            ? 'הקלטה חסומה. הפעל "הקלדה קולית": הגדרות → כלליות → מקלדת → הפעל הקלדה קולית. אחר כך הפעל מחדש את Safari.'
+            : 'הקלטת קול חסומה. אשר הרשאת מיקרופון בהגדרות הדפדפן.'
           : `שגיאה: ${e.error}`;
         setRecordingError(msg);
       }
@@ -130,6 +146,9 @@ export function RawInputSection({ value, onChange, onExtract, isLoading, error, 
         ) : (
           <span className="text-sm text-slate-400">(הקלטת קול: Chrome דסקטופ / Safari באייפון)</span>
         )}
+      {isIOS && SpeechReco && (
+        <p className="text-xs text-slate-400">טיפ: אם ההקלטה חסומה – הפעל "הקלדה קולית" בהגדרות המכשיר</p>
+      )}
       </div>
     </div>
   );
