@@ -263,7 +263,7 @@ function App() {
   }, [entries]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-slate-100">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-amber-50 to-slate-100">
       <header className="border-b border-amber-200/60 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -361,6 +361,12 @@ function App() {
         </div>
         )}
       </main>
+
+      <footer className="mt-auto border-t border-amber-200/60 py-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center text-sm text-slate-500">
+          בנייה: יובל מדרר
+        </div>
+      </footer>
     </div>
   );
 }
